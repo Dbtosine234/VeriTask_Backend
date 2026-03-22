@@ -7,12 +7,14 @@ app = FastAPI(title="VeriTask API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://veritask-me.vercel.app/",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/")
 def root():
@@ -21,6 +23,5 @@ def root():
         "product": "Human-only work marketplace for World App",
         "version": "0.1.0",
     }
-
 
 app.include_router(api_router, prefix="/api/v1")
