@@ -9,11 +9,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://veritask-me.vercel.app/",
+        "https://veritaskfrontend-git-vercel-react-54d02f-dbtosine234s-projects.vercel.app",
     ],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 @app.get("/")
