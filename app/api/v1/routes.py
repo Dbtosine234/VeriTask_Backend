@@ -14,6 +14,9 @@ from app.core.store import (
 from app.schemas.actions import AcceptTaskRequest, FundEscrowRequest, SubmitTaskRequest
 from app.schemas.marketplace import TaskCreate, TaskRead
 from app.schemas.world import VerifyProofRequest
+from app.core.store import get_activity as store_get_activity
+from app.core.store import get_wallet as store_get_wallet
+from app.schemas.product import ActivityRead, WalletRead
 
 router = APIRouter()
 
@@ -127,3 +130,17 @@ def verify_world_proof(payload: VerifyProofRequest):
         "action": payload.action,
         "message": "Implement live World proof verification here.",
     }
+@router.get("/wallet/{user_id}", response_model=WalletRead)
+def get_wallet(user_id: str):
+    result = store_get_wallet(user_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    return result
+
+
+@router.get("/activity/{user_id}", response_model=ActivityRead)
+def get_activity(user_id: str):
+    result = store_get_activity(user_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    return result
