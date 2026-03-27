@@ -222,3 +222,133 @@ def get_world_status(user_id: str) -> dict[str, Any] | None:
         "wallet_connected": user["wallet_connected"],
         "verification_level": "human",
     }
+def get_wallet(user_id: str) -> dict[str, Any] | None:
+    user = users.get(user_id)
+    if not user:
+        return None
+
+    pending_balance = 0.0
+    released_balance = 0.0
+    transactions: list[dict[str, Any]] = []
+
+    for task in tasks.values():
+        if task.get("worker_id") != user_id:
+            continue
+
+        try:
+            amount = float(task.get("reward_amount", 0))
+        except (TypeError, ValueError):
+            amount = 0.0
+
+        currency = task.get("currency", "USDC")
+        status = task.get("status", "open")
+
+        if status == "submitted":
+            pending_balance += amount
+            transactions.append(
+                {
+                    "id": f"txn_{task['id']}_pending",
+                    "task_id": task["id"],
+                    "title": task["title"],
+                    "amount": amount,
+                    "currency": currency,
+                    "status": "pending",
+                }
+            )
+
+        elif status == "paid":
+            released_balance += amount
+            transactions.append(
+                {
+                    "id": f"txn_{task['id']}_released",
+                    "task_id": task["id"],
+                    "title": task["title"],
+                    "amount": amount,
+                    "currency": currency,
+                    "status": "released",
+                }
+            )
+
+    return {
+        "user_id": user_id,
+        "currency": "USDC",
+        "pending_balance": pending_balance,
+        "released_balance": released_balance,
+        "total_earned": released_balance,
+        "transactions": transactions,
+    }
+
+
+def get_activity(user_id: str) -> dict[str, Any] | None:
+    user = users.get(user_id)
+    if not user:
+        return None
+
+    items: list[dict[str, Any]] = []
+
+    for task in tasks.values():
+        if task.get("created_by") == user_id:
+            items.append(
+                {
+                    "id": f"activity_created_{task['id']}",
+                    "type": "task_created",
+                    "task_id": task["id"],
+                    "message": f"Created task: {task['title']}",
+                }
+            )
+
+            if task.get("escrow_status") in ["funded", "released"]:
+                items.append(
+                    {
+                        "id": f"activity_escrow_{task['id']}",
+                        "type": "escrow_funded",
+                        "task_id": task["id"],
+                        "message": f"Funded escrow for task: {task['title']}",
+                    }
+                )
+
+            if task.get("status") == "paid":
+                items.append(
+                    {
+                        "id": f"activity_paid_{task['id']}",
+                        "type": "payout_released",
+                        "task_id": task["id"],
+                        "message": f"Released payout for task: {task['title']}",
+                    }
+                )
+
+        if task.get("worker_id") == user_id:
+            if task.get("status") in ["accepted", "submitted", "paid"]:
+                items.append(
+                    {
+                        "id": f"activity_accept_{task['id']}",
+                        "type": "task_accepted",
+                        "task_id": task["id"],
+                        "message": f"Accepted task: {task['title']}",
+                    }
+                )
+
+            if task.get("status") in ["submitted", "paid"] and task.get("proof_text"):
+                items.append(
+                    {
+                        "id": f"activity_submit_{task['id']}",
+                        "type": "proof_submitted",
+                        "task_id": task["id"],
+                        "message": f"Submitted proof for task: {task['title']}",
+                    }
+                )
+
+            if task.get("status") == "paid":
+                items.append(
+                    {
+                        "id": f"activity_earned_{task['id']}",
+                        "type": "reward_received",
+                        "task_id": task["id"],
+                        "message": f"Received reward for task: {task['title']}",
+                    }
+                )
+
+    return {
+        "user_id": user_id,
+        "items": items,
+    }
