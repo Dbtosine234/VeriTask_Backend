@@ -56,7 +56,8 @@ def get_task(task_id: str):
 
 @router.post("/tasks", response_model=TaskRead)
 def create_task(task: TaskCreate):
-    return store_create_task(task.model_dump())
+    data = task.model_dump() if hasattr(task, "model_dump") else task.dict()
+    return store_create_task(data)
 
 
 @router.post("/tasks/{task_id}/accept")
